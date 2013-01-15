@@ -121,7 +121,7 @@ module EM::FTPD
       str = "211- Supported features:#{LBRK}"
       features = %w{ EPRT EPSV SIZE AUTH PBSZ PROT}
       features.each do |feat|
-        str << " #{feat}" << LBRK
+         str << "AUTH TLS" << LBRK #str << " #{feat}" << LBRK
       end
       str << "211 END" << LBRK
 
