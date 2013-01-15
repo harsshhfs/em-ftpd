@@ -16,7 +16,7 @@ module EM::FTPD
 
     COMMANDS = %w[quit type user retr stor eprt port cdup cwd dele rmd pwd
                   list size syst mkd pass xcup xpwd xcwd xrmd rest allo nlst
-                  pasv epsv help noop mode rnfr rnto stru feat auth feat]
+                  pasv epsv help noop mode rnfr rnto stru feat auth ]
 
     attr_reader :root, :name_prefix
     attr_accessor :datasocket
@@ -129,7 +129,7 @@ module EM::FTPD
     end
     
     def cmd_auth(param)
-      send_unauthorised and return unless logged_in?
+      #send_unauthorised and return unless logged_in?
       send_param_required and return if param.nil?
       
       if param == "TLS"
@@ -138,9 +138,19 @@ module EM::FTPD
        send_response "234 Security environment established."
      
        else
-         send_response "534 Invalid parameters."
+         send_response "500 Invalid parameters."
        end
        
+    end
+    
+    # used to specify size of protected buffer
+    def cmd_pbsz(param)
+      send_response "500 Feature not implemented"
+    end
+
+    # used to specify data protection level
+    def cmd_prot(param)
+      send_response "500 Feature not implemented"
     end
 
     # the original FTP spec had various options for hosts to negotiate how data
