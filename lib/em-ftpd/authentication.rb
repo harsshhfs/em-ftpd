@@ -43,6 +43,19 @@ module EM::FTPD
         end
       end
     end
+    
+    def cmd_auth(param)
+      send_unauthorised and return unless logged_in?
+      send_param_required and return if param.nil?
+      
+      if param == "TLS"
+       start_tls(:private_key_file => './lib/server.key', :cert_chain_file => './lib/server.crt', :verify_peer => false)
+       send_response "234 Security environment established."
+       else
+         send_response "534 Invalid parameters."
+       end
+       
+    end
 
   end
 end

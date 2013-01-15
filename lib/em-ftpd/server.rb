@@ -16,7 +16,7 @@ module EM::FTPD
 
     COMMANDS = %w[quit type user retr stor eprt port cdup cwd dele rmd pwd
                   list size syst mkd pass xcup xpwd xcwd xrmd rest allo nlst
-                  pasv epsv help noop mode rnfr rnto stru feat]
+                  pasv epsv help noop mode rnfr rnto stru feat auth feat]
 
     attr_reader :root, :name_prefix
     attr_accessor :datasocket
@@ -119,7 +119,7 @@ module EM::FTPD
 
     def cmd_feat(param)
       str = "211- Supported features:#{LBRK}"
-      features = %w{ EPRT EPSV SIZE }
+      features = %w{ EPRT EPSV SIZE AUTH PBSZ PROT}
       features.each do |feat|
         str << " #{feat}" << LBRK
       end
