@@ -127,6 +127,21 @@ module EM::FTPD
 
       send_response(str, true)
     end
+    
+    def cmd_auth(param)
+      send_unauthorised and return unless logged_in?
+      send_param_required and return if param.nil?
+      
+      if param == "TLS"
+       start_tls(:private_key_file => './lib/server.key', :cert_chain_file => './lib/server.crt', :verify_peer => false)
+     
+       send_response "234 Security environment established."
+     
+       else
+         send_response "534 Invalid parameters."
+       end
+       
+    end
 
     # the original FTP spec had various options for hosts to negotiate how data
     # would be sent over the data socket, In reality these days (S)tream mode
