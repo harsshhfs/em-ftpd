@@ -137,7 +137,7 @@ module EM::FTPD
        send_response "234 Security environment established."
      
        else
-         send_response "500 Invalid parameters."
+         send_response "500 Invalid parameters. "
        end
        
     end
