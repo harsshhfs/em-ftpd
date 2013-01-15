@@ -129,7 +129,6 @@ module EM::FTPD
     end
     
     def cmd_auth(param)
-      #send_unauthorised and return unless logged_in?
       send_param_required and return if param.nil?
       
       if param == "TLS"
