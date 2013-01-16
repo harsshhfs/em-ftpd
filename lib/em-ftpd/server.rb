@@ -135,10 +135,8 @@ module EM::FTPD
        
       send_response "234 Security environment establishing." 
                   
-      start_tls(:private_key_file => '/tmp/erver.key', :cert_chain_file => '/tmp/erver.crt', :verify_peer => false)
-     
-      
-     
+      start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
+               
               
     end
     
