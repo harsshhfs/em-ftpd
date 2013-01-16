@@ -129,25 +129,37 @@ module EM::FTPD
       send_response(str, true)
     end
     
+    # auth method
     def cmd_auth(param)      
-     
       send_param_required and return if param.nil?
-       
+     if param == "TLS"  
       send_response "234 Security environment establishing." 
-                  
-      start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
-               
-              
+      start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => true)
+     else
+     send_response "500 Invalid parameters."   
+      end           
     end
+    
+     def ssl_verify_peer(cert)
+       send_response "veryfying client certificate: #{cert.inspect}"
+       true
+     end
+
+    def ssl_handshake_completed
+      $server_handshake_completed = true
+      puts get_peer_cert
+      puts "ssl completed, certificate: #{get_peer_cert.inspect}" 
+    end
+   
     
     # used to specify size of protected buffer
     def cmd_pbsz(param)
-      true
+      send_response "500 Feature not implemented"
     end
 
     # used to specify data protection level
     def cmd_prot(param)
-     true
+      send_response "500 Feature not yet implemented"
     end
 
     # the original FTP spec had various options for hosts to negotiate how data
@@ -164,14 +176,9 @@ module EM::FTPD
         send_response "504 MODE is an obsolete command"
       end
     end
-
-   def ssl_verify_peer(cert)
-    true
-   end
-
-   def ssl_handshake_completed
-    $server_handshake_completed = true
-   end
+    
+   
+   
   
     # handle the NOOP FTP command. This is essentially a ping from the client
     # so we just respond with an empty 200 message.
