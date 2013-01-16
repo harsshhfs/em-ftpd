@@ -16,7 +16,7 @@ module EM::FTPD
 
     COMMANDS = %w[quit type user retr stor eprt port cdup cwd dele rmd pwd
                   list size syst mkd pass xcup xpwd xcwd xrmd rest allo nlst
-                  pasv epsv help noop mode rnfr rnto stru feat auth ]
+                  pasv epsv help noop mode rnfr rnto stru feat auth pbsz prot]
 
     attr_reader :root, :name_prefix
     attr_accessor :datasocket
@@ -142,12 +142,12 @@ module EM::FTPD
     
     # used to specify size of protected buffer
     def cmd_pbsz(param)
-      send_response "500 Feature not implemented"
+      true
     end
 
     # used to specify data protection level
     def cmd_prot(param)
-      send_response "500 Feature not yet implemented"
+     true
     end
 
     # the original FTP spec had various options for hosts to negotiate how data
