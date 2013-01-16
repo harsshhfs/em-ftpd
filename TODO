@@ -4,3 +4,6 @@
 * optional "post_connection" method on driver that can trigger cleanup
 * extra commands
   * MDTM
+  * AUTH TLS 
+  * PBSZ
+  * PROT
