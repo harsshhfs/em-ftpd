@@ -18,7 +18,7 @@ module EM::FTPD
                   list size syst mkd pass xcup xpwd xcwd xrmd rest allo nlst
                   pasv epsv help noop mode rnfr rnto stru feat auth pbsz prot]
 
-    attr_reader :root, :name_prefix
+    attr_reader :root, :name_prefix, :auth_tls_success 
     attr_accessor :datasocket
 
     def initialize(driver, *args)
@@ -90,8 +90,8 @@ module EM::FTPD
 
     def close_datasocket
       if @datasocket
-        @datasocket.close_connection_after_writing
-        @datasocket = nil
+         @datasocket.close_connection_after_writing
+         @datasocket = nil
       end
 
       # stop listening for data socket connections, we have one
@@ -134,32 +134,40 @@ module EM::FTPD
       send_param_required and return if param.nil?
      if param == "TLS"  
       send_response "234 Security environment establishing." 
-      start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => true)
+      start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
+      $auth_tls_success = true
+     puts $auth_tls_success
      else
-     send_response "500 Invalid parameters."   
-      end           
+      send_response "500 Invalid parameters."   
+      $auth_tls_success = false
+     end           
     end
-    
-     def ssl_verify_peer(cert)
-       send_response "veryfying client certificate: #{cert.inspect}"
-       true
-     end
+         
 
     def ssl_handshake_completed
       $server_handshake_completed = true
-      puts get_peer_cert
-      puts "ssl completed, certificate: #{get_peer_cert.inspect}" 
+      #close_connection_after_writing
     end
    
     
     # used to specify size of protected buffer
     def cmd_pbsz(param)
-      send_response "500 Feature not implemented"
+      send_param_required and return if param.nil?
+     if param == "0"
+        send_response "200 "<< LBRK
+       else
+       send_response "500 "  << LBRK
+     end
     end
 
     # used to specify data protection level
     def cmd_prot(param)
-      send_response "500 Feature not yet implemented"
+      send_param_required and return if param.nil?
+     if param == "P"
+        send_response "200 " << LBRK        
+     else
+       send_response "500"  << LBRK
+     end
     end
 
     # the original FTP spec had various options for hosts to negotiate how data
