@@ -136,7 +136,7 @@ module EM::FTPD
       send_response "234 Security environment establishing." 
       start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
       $auth_tls_success = true
-     puts $auth_tls_success
+      puts $auth_tls_success
      else
       send_response "500 Invalid parameters."   
       $auth_tls_success = false
