@@ -18,8 +18,8 @@ module EM::FTPD
                   list size syst mkd pass xcup xpwd xcwd xrmd rest allo nlst
                   pasv epsv help noop mode rnfr rnto stru feat auth pbsz prot]
 
-    attr_reader :root, :name_prefix, :auth_tls_success 
-    attr_accessor :datasocket
+    attr_reader :root, :name_prefix
+    attr_accessor :datasocket, :auth_tls_success, :securechannel
 
     def initialize(driver, *args)
       if driver.is_a?(Class) && args.empty?
@@ -31,6 +31,7 @@ module EM::FTPD
       end
       @datasocket = nil
       @listen_sig = nil
+      @securechannel = false
       super()
     end
 
@@ -134,18 +135,20 @@ module EM::FTPD
       send_param_required and return if param.nil?
      if param == "TLS"  
       send_response "234 Security environment establishing." 
+    
       start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
-      $auth_tls_success = true
-      puts $auth_tls_success
+      
+      @auth_tls_success = true
+      puts @auth_tls_success
      else
       send_response "500 Invalid parameters."   
-      $auth_tls_success = false
+      @auth_tls_success = false
      end           
     end
          
 
     def ssl_handshake_completed
-      $server_handshake_completed = true
+      $server_handshake_completed = true      
       #close_connection_after_writing
     end
    
@@ -164,6 +167,7 @@ module EM::FTPD
     def cmd_prot(param)
       send_param_required and return if param.nil?
      if param == "P"
+        @securechannel = true
         send_response "200 " << LBRK        
      else
        send_response "500"  << LBRK
@@ -328,16 +332,19 @@ module EM::FTPD
     # the server before the data socket is ready.
     #
     def send_outofband_data(data)
+     
       wait_for_datasocket do |datasocket|
+      
         if datasocket.nil?
           send_response "425 Error establishing connection"
         else
           if data.is_a?(Array)
             data = data.join(LBRK) << LBRK
           end
+         
           data = StringIO.new(data) if data.kind_of?(String)
-
-
+                      
+        
           if EM.reactor_running?
             # send the data out in chunks, as fast as the client can recieve it -- not blocking the reactor in the process
             streamer = IOStreamer.new(datasocket, data)
@@ -392,13 +399,15 @@ module EM::FTPD
     # If this happens, exit the method early and try again later. See the method
     # comments to send_outofband_data for further explanation.
     #
+        
     def receive_outofband_data(&block)
-      wait_for_datasocket do |datasocket|
+      
+       wait_for_datasocket do |datasocket|     
         if datasocket.nil?
           send_response "425 Error establishing connection"
           yield false
         else
-
+                    
           # let the client know we're ready to start
           send_response "150 Data transfer starting"
 

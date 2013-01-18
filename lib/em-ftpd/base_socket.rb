@@ -21,9 +21,7 @@ module BaseSocket
   end
 
 
-  def connection_completed
-    start_tls
-  end
+ 
 
   def receive_data(chunk)
     if @on_stream
