@@ -14,6 +14,7 @@ Gem::Specification.new do |spec|
   spec.homepage = "http://github.com/yob/em-ftpd"
   spec.required_ruby_version = ">=1.9.2"
 
+  spec.add_development_dependency("os")
   spec.add_development_dependency("rake", "~> 10.0")
   spec.add_development_dependency("rspec", "~>2.6")
   spec.add_development_dependency("em-redis")
@@ -22,5 +23,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency("guard-bundler")
   spec.add_development_dependency("guard-rspec")
 
-  spec.add_dependency('eventmachine', "~> 1.0.0.beta1")
+  spec.add_dependency("eventmachine")
 end

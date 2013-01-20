@@ -20,6 +20,9 @@ module BaseSocket
     @data ||= ""
   end
 
+
+ 
+
   def receive_data(chunk)
     if @on_stream
       @on_stream.call(chunk)

@@ -16,10 +16,10 @@ module EM::FTPD
 
     COMMANDS = %w[quit type user retr stor eprt port cdup cwd dele rmd pwd
                   list size syst mkd pass xcup xpwd xcwd xrmd rest allo nlst
-                  pasv epsv help noop mode rnfr rnto stru feat auth ]
+                  pasv epsv help noop mode rnfr rnto stru feat auth pbsz prot]
 
     attr_reader :root, :name_prefix
-    attr_accessor :datasocket
+    attr_accessor :datasocket, :auth_tls_success, :securechannel
 
     def initialize(driver, *args)
       if driver.is_a?(Class) && args.empty?
@@ -31,6 +31,7 @@ module EM::FTPD
       end
       @datasocket = nil
       @listen_sig = nil
+      $securechannel = false
       super()
     end
 
@@ -90,8 +91,8 @@ module EM::FTPD
 
     def close_datasocket
       if @datasocket
-        @datasocket.close_connection_after_writing
-        @datasocket = nil
+         @datasocket.close_connection_after_writing
+         @datasocket = nil
       end
 
       # stop listening for data socket connections, we have one
@@ -119,7 +120,8 @@ module EM::FTPD
 
     def cmd_feat(param)
       str = "211- Supported features:#{LBRK}"
-      features = %w{ EPRT EPSV SIZE AUTH PBSZ PROT}
+      features = %w{ EPRT EPSV SIZE PBSZ PROT}
+      str << " AUTH TLS" << LBRK  #str << " #{feat}" << LBRK
       features.each do |feat|
          str << "AUTH TLS" << LBRK #str << " #{feat}" << LBRK
       end
@@ -128,28 +130,48 @@ module EM::FTPD
       send_response(str, true)
     end
     
-    def cmd_auth(param)
+    # auth method
+    def cmd_auth(param)      
       send_param_required and return if param.nil?
+     if param == "TLS"  
+      send_response "234 Security environment establishing." 
+    
+      start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
       
-      if param == "TLS"
-       start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
-     
-       send_response "234 Security environment established."
-     
-       else
-         send_response "500 Invalid parameters. "
-       end
-       
+      @auth_tls_success = true
+      
+     else
+      send_response "500 Invalid parameters."   
+      @auth_tls_success = false
+     end           
     end
+         
+
+    def ssl_handshake_completed
+      $server_handshake_completed = true      
+      #close_connection_after_writing
+    end
+   
     
     # used to specify size of protected buffer
     def cmd_pbsz(param)
-      send_response "500 Feature not implemented"
+      send_param_required and return if param.nil?
+     if param == "0"
+        send_response "200 "<< LBRK
+       else
+       send_response "500 "  << LBRK
+     end
     end
 
     # used to specify data protection level
     def cmd_prot(param)
-      send_response "500 Feature not implemented"
+      send_param_required and return if param.nil?
+     if param == "P"
+        $securechannel = true
+        send_response "200 " << LBRK        
+     else
+       send_response "500"  << LBRK
+     end
     end
 
     # the original FTP spec had various options for hosts to negotiate how data
@@ -166,7 +188,10 @@ module EM::FTPD
         send_response "504 MODE is an obsolete command"
       end
     end
-
+    
+   
+   
+  
     # handle the NOOP FTP command. This is essentially a ping from the client
     # so we just respond with an empty 200 message.
     def cmd_noop(param)
@@ -307,16 +332,19 @@ module EM::FTPD
     # the server before the data socket is ready.
     #
     def send_outofband_data(data)
+     
       wait_for_datasocket do |datasocket|
+      
         if datasocket.nil?
           send_response "425 Error establishing connection"
         else
           if data.is_a?(Array)
             data = data.join(LBRK) << LBRK
           end
+         
           data = StringIO.new(data) if data.kind_of?(String)
-
-
+                      
+        
           if EM.reactor_running?
             # send the data out in chunks, as fast as the client can recieve it -- not blocking the reactor in the process
             streamer = IOStreamer.new(datasocket, data)
@@ -371,13 +399,15 @@ module EM::FTPD
     # If this happens, exit the method early and try again later. See the method
     # comments to send_outofband_data for further explanation.
     #
+        
     def receive_outofband_data(&block)
-      wait_for_datasocket do |datasocket|
+      
+       wait_for_datasocket do |datasocket|     
         if datasocket.nil?
           send_response "425 Error establishing connection"
           yield false
         else
-
+                    
           # let the client know we're ready to start
           send_response "150 Data transfer starting"
 

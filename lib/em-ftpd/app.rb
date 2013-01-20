@@ -1,7 +1,7 @@
 # coding: utf-8
 
 require 'singleton'
-
+require 'os'
 module EM::FTPD
 
   class App
@@ -73,16 +73,26 @@ module EM::FTPD
     end
 
     def setup_signal_handlers
-      trap('QUIT') do
+     if OS.windows?
+       trap('TERM') do
         EM.stop
       end
+      trap('INT') do
+        EM.stop
+      end
+      else
+      trap('QUIT') do
+         EM.stop
+       end
       trap('TERM') do
         EM.stop
       end
       trap('INT') do
         EM.stop
       end
-    end
+  
+     end
+          end
 
   end
 end

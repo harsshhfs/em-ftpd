@@ -1,16 +1,33 @@
+require 'socket'
+require 'stringio'
+
+require 'eventmachine'
+require 'em/protocols/line_protocol'
+
 module EM::FTPD
 
   # An eventmachine module for opening a socket for the client to connect
   # to and send a file
   #
-  class PassiveSocket < EventMachine::Connection
+  class PassiveSocket < EM::Connection 
     include EM::Deferrable
     include BaseSocket
-    
+    include EM::Protocols::LineProtocol
 
     def self.start(host, control_server)
-      EventMachine.start_server(host, 0, self) do |conn|
-        control_server.datasocket = conn
+     
+     puts $securechannel
+           
+       if $securechannel == true  
+           
+           start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
+             EventMachine.start_server(host, 0, self) do |conn|
+              control_server.datasocket = conn
+             end 
+       else
+           EventMachine.start_server(host, 0, self) do |conn|
+            control_server.datasocket = conn
+           end
       end
     end
 
