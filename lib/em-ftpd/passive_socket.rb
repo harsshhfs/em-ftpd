@@ -9,26 +9,29 @@ module EM::FTPD
   # An eventmachine module for opening a socket for the client to connect
   # to and send a file
   #
-  class PassiveSocket < EventMachine::Connection 
+  class PassiveSocket < EM::Connection
     include EM::Deferrable
     include BaseSocket
     include EM::Protocols::LineProtocol
+    
+    
 
     def self.start(host, control_server)
      
-     puts $securechannel
+      puts $securechannel           
+       if $securechannel == true              
+           def post_init
+                close_connection_after_writing                
+                start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
+           end             
            
-       if $securechannel == true 
-            EventMachine::start_tls(0) #(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
-           # EventMachine::start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
-           #start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
-             EventMachine.start_server(host, 0, self) do |conn|
-              control_server.datasocket = conn
-             end 
-             
-       else
-           EventMachine.start_server(host, 0, self) do |conn|
-            control_server.datasocket = conn
+            EventMachine.start_server(host, 0, self) do |conn|              
+              control_server.datasocket = conn              
+            end      
+         else
+          
+            EventMachine.start_server(host, 0, self) do |conn|
+             control_server.datasocket = conn
            end
       end
     end
@@ -43,7 +46,6 @@ module EM::FTPD
     def self.get_port(sig)
       Socket.unpack_sockaddr_in( EM.get_sockname( sig ) ).first
     end
-
-    
+   
   end
 end

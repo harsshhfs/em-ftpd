@@ -56,7 +56,7 @@ module EM::FTPD
           puts err.backtrace.join("\n")
         end
       else
-        send_response "500 Sorry, I don't understand #{cmd.upcase}"
+          send_response "500 Sorry, I don't understand #{cmd.upcase}"
       end
     end
 
@@ -123,10 +123,9 @@ module EM::FTPD
       features = %w{ EPRT EPSV SIZE PBSZ PROT}
       str << " AUTH TLS" << LBRK  #str << " #{feat}" << LBRK
       features.each do |feat|
-         str << " #{feat}" << LBRK
+        str << " #{feat}" << LBRK
       end
       str << "211 END" << LBRK
-
       send_response(str, true)
     end
     
@@ -135,20 +134,17 @@ module EM::FTPD
       send_param_required and return if param.nil?
      if param == "TLS"  
       send_response "234 Security environment establishing." 
-    
       start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
-      
       @auth_tls_success = true
-      
      else
-      send_response "500 Invalid parameters."   
+      send_response "534 Server is not willing to accept security mechanism."   
       @auth_tls_success = false
      end           
     end
          
 
     def ssl_handshake_completed
-      $server_handshake_completed = true      
+      $server_handshake_completed = true    
       #close_connection_after_writing
     end
    
@@ -355,7 +351,8 @@ module EM::FTPD
             streamer.callback {
               send_response "226 Closing data connection, sent #{streamer.bytes_streamed} bytes"
               finalize.call
-            }
+            }#  EventMachine.start_tls(:private_key_file => '/tmp/server.key', :cert_chain_file => '/tmp/server.crt', :verify_peer => false)
+             
             streamer.errback { |ex|
               send_response "425 Error while streaming data, sent #{streamer.bytes_streamed} bytes"
               finalize.call
@@ -421,7 +418,7 @@ module EM::FTPD
     def start_passive_socket
       # close any existing data socket
       close_datasocket
-
+      #close_connection_after_writing
       # grab the host/address the current connection is
       # operating on
       host = Socket.unpack_sockaddr_in( self.get_sockname ).last
